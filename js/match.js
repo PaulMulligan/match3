@@ -91,6 +91,27 @@ window.onload = function() {
     // Gui buttons
     var buttons = [ { x: 30, y: 15, width: 150, height: 50, text: "New Game"} ];
     
+    // Images
+    var gemimage;
+    var status1;
+    var status2;
+    
+    function loadImages() {
+        gemimage = new Image();
+        gemimage.onload = function() {
+            status1 = new Image();
+            status1.onload = function() {
+                status2 = new Image();
+                status2.onload = function() {
+                    init();
+                };
+                status2.src = "./img/status2.png";
+            };
+            status1.src = "./img/status1.png";
+        };
+        gemimage.src = "./img/gem.png";
+    };
+    
     // Initialize the game
     function init() {
         // Add mouse events
@@ -338,6 +359,11 @@ window.onload = function() {
         // Character container
         context.fillStyle = "#ffffff";
         context.fillRect(400, 75, 300, 370);
+        if (score < (requiredscore/2)) {
+            context.drawImage(status1, 400, 75, 300, 370);
+        } else {
+            context.drawImage(status2, 400, 75, 300, 370);
+        }
         
         // Score bar
         context.lineWidth = 3;
@@ -571,6 +597,7 @@ window.onload = function() {
     function drawTile(x, y, r, g, b) {
         context.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
         context.fillRect(x + 2, y + 2, level.tilewidth - 4, level.tileheight - 4);
+        context.drawImage(gemimage, x + 2, y + 2, level.tilewidth - 4, level.tileheight - 4);
     }
     
     function drawPartialTile(x, y, r, g, b, i, j) {
@@ -584,6 +611,7 @@ window.onload = function() {
         var offset1 = 2 + (halfwidth-(ratio*halfwidth));
         var offset2 = 2 + (halfheight-(ratio*halfheight));
         context.fillRect(x + offset1, y + offset2, (level.tilewidth-4)*ratio, (level.tileheight-4)*ratio);
+        context.drawImage(gemimage, x + offset1, y + offset2, (level.tilewidth-4)*ratio, (level.tileheight-4)*ratio);
     }
     
     // Render clusters
@@ -1048,5 +1076,6 @@ window.onload = function() {
     }
     
     // Call init to start the game
-    init();
+//    init();
+    loadImages();
 };
