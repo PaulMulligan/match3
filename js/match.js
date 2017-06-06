@@ -35,8 +35,8 @@ window.onload = function() {
     
     // Level object
     var level = {
-        x: 250,         // X position
-        y: 113,         // Y position
+        x: 30,         // X position
+        y: 123,         // Y position
         columns: 8,     // Number of tile columns
         rows: 8,        // Number of tile rows
         tilewidth: 40,  // Visual width of a tile
@@ -67,6 +67,12 @@ window.onload = function() {
     
     // Score
     var score = 0;
+    var movecount = 15;
+    var requiredscore = 20;
+    var scorechange = 0;
+    var goodquotes = ["Not bad", "Keep it up"];
+    var greatquotes = ["Amazing!", "Spectacular!"];
+    var successquote;
     
     // Animation variables
     var animationstate = 0;
@@ -83,9 +89,7 @@ window.onload = function() {
     var gameover = false;
     
     // Gui buttons
-    var buttons = [ { x: 30, y: 240, width: 150, height: 50, text: "New Game"},
-                    { x: 30, y: 300, width: 150, height: 50, text: "Show Moves"},
-                    { x: 30, y: 360, width: 150, height: 50, text: "Enable AI Bot"}];
+    var buttons = [ { x: 30, y: 15, width: 150, height: 50, text: "New Game"} ];
     
     // Initialize the game
     function init() {
@@ -133,9 +137,12 @@ window.onload = function() {
             // Game is ready for player input
             
             // Check for game over
-            if (moves.length <= 0) {
+            if (movecount <= 0) {
                 gameover = true;
             }
+            
+            scorechange = 0;
+            successquote = null;
             
             // Let the AI bot make a move, if enabled
             if (aibot) {
@@ -171,7 +178,12 @@ window.onload = function() {
                         // Add points to the score
                         for (var i=0; i<clusters.length; i++) {
                             // Add extra points for longer clusters
-                            score += 100 * (clusters[i].length - 2);;
+                            var bonus = Math.pow(2, (clusters[i].length - 3));
+                            score += bonus;
+                            scorechange += bonus;
+                            if (clusters[i].length > 3) {
+                                movecount++;
+                            }
                         }
                     
                         // Clusters found, remove them
@@ -217,6 +229,7 @@ window.onload = function() {
                         animationstate = 0;
                         animationtime = 0;
                         gamestate = gamestates.resolve;
+                        movecount--;
                     } else {
                         // Invalid swap, Rewind swapping animation
                         animationstate = 3;
@@ -316,24 +329,153 @@ window.onload = function() {
     // Draw a frame with a border
     function drawFrame() {
         // Draw background and a border
+        context.strokeStyle = "#000000";
         context.fillStyle = "#d0d0d0";
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = "#e8eaec";
         context.fillRect(1, 1, canvas.width-2, canvas.height-2);
         
-        // Draw header
-        context.fillStyle = "#303030";
-        context.fillRect(0, 0, canvas.width, 65);
-        
-        // Draw title
+        // Character container
         context.fillStyle = "#ffffff";
-        context.font = "24px Verdana";
-        context.fillText("Match3 Example - Rembound.com", 10, 30);
+        context.fillRect(400, 75, 300, 370);
         
-        // Display fps
+        // Score bar
+        context.lineWidth = 3;
         context.fillStyle = "#ffffff";
-        context.font = "12px Verdana";
-        context.fillText("Fps: " + fps, 13, 50);
+        roundRect(context, 80, 75, 270, 35, 15, true, true);
+        
+        // Moves left container
+        circle(context, 50, 93, 17);
+        
+        // Draw moves remaining
+        context.fillStyle = "#003300";
+        context.font = "20px Verdana";
+        context.fillText(movecount, 37, 100);
+        
+        if (scorechange > 0) {
+            // Draw a speech bubble
+            drawBubble(context, 500, 125, 90, 30, 5);
+            context.fillStyle = "#003300";
+            context.font = "10px Verdana";
+            if (!successquote) {
+                if (scorechange > 1) {
+                    successquote = getRandomFromArray(greatquotes);
+                } else {
+                    successquote = getRandomFromArray(goodquotes);
+                }
+            }
+            context.fillText(successquote, 510, 140);
+        }
+        
+        context.lineWidth = 1;
+        context.fillStyle = "#00b300";
+        context.strokeStyle = "#00b300";
+        // Draw score
+        if (score >= requiredscore) {
+            roundRect(context, 83, 78, 264, 29, 11, true, true);
+        } else if (score > 0) {
+            var scorewidth = (score/requiredscore)*(270-6);
+            roundOnLeftRect(context, 83, 78, scorewidth, 29, 11, true, true);
+        }
+    }
+    
+    function getRandomFromArray(array) {
+        return array[Math.floor(Math.random()*array.length)];
+    };
+    
+    function drawBubble(ctx, x, y, w, h, radius) {
+      var r = x + w;
+      var b = y + h;
+      ctx.beginPath();
+      ctx.strokeStyle="black";
+      ctx.lineWidth="2";
+      ctx.moveTo(x+radius, y);
+      ctx.lineTo(x+radius/2, y-10);
+      ctx.lineTo(x+radius * 2, y);
+      ctx.lineTo(r-radius, y);
+      ctx.quadraticCurveTo(r, y, r, y+radius);
+      ctx.lineTo(r, y+h-radius);
+      ctx.quadraticCurveTo(r, b, r-radius, b);
+      ctx.lineTo(x+radius, b);
+      ctx.quadraticCurveTo(x, b, x, b-radius);
+      ctx.lineTo(x, y+radius);
+      ctx.quadraticCurveTo(x, y, x+radius, y);
+      ctx.stroke();
+    }
+    
+    function circle(ctx, x, y, radius) {
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+        ctx.fill();
+        ctx.stroke();
+    }
+    
+    function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+        if (typeof stroke == 'undefined') {
+          stroke = true;
+        }
+        if (typeof radius === 'undefined') {
+          radius = 5;
+        }
+        if (typeof radius === 'number') {
+          radius = {tl: radius, tr: radius, br: radius, bl: radius};
+        } else {
+          var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
+          for (var side in defaultRadius) {
+            radius[side] = radius[side] || defaultRadius[side];
+          }
+        }
+        ctx.beginPath();
+        ctx.moveTo(x + radius.tl, y);
+        ctx.lineTo(x + width - radius.tr, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+        ctx.lineTo(x + width, y + height - radius.br);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+        ctx.lineTo(x + radius.bl, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+        ctx.lineTo(x, y + radius.tl);
+        ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+        ctx.closePath();
+        if (fill) {
+          ctx.fill();
+        }
+        if (stroke) {
+          ctx.stroke();
+        }
+
+    }
+    
+    function roundOnLeftRect(ctx, x, y, width, height, radius, fill, stroke) {
+        if (typeof stroke == 'undefined') {
+          stroke = true;
+        }
+        if (typeof radius === 'undefined') {
+          radius = 5;
+        }
+        if (typeof radius === 'number') {
+          radius = {tl: radius, tr: radius, br: radius, bl: radius};
+        } else {
+          var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
+          for (var side in defaultRadius) {
+            radius[side] = radius[side] || defaultRadius[side];
+          }
+        }
+        ctx.beginPath();
+        ctx.moveTo(x + radius.tl, y);
+        ctx.lineTo(x + width, y);
+        ctx.lineTo(x + width, y + height);
+        ctx.lineTo(x + radius.bl, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+        ctx.lineTo(x, y + radius.tl);
+        ctx.quadraticCurveTo(x, y, x + radius.tl, y);
+        ctx.closePath();
+        if (fill) {
+          ctx.fill();
+        }
+        if (stroke) {
+          ctx.stroke();
+        }
+
     }
     
     // Draw buttons
@@ -450,14 +592,18 @@ window.onload = function() {
             // Calculate the tile coordinates
             var coord = getTileCoordinate(clusters[i].column, clusters[i].row, 0, 0);
             
+            var textnum = Math.pow(2, clusters[i].length-3);
+            context.fillStyle = "#000000";
+            context.font = "20px Verdana";
             if (clusters[i].horizontal) {
-                // Draw a horizontal line
-                context.fillStyle = "#00ff00";
-                context.fillRect(coord.tilex + level.tilewidth/2, coord.tiley + level.tileheight/2 - 4, (clusters[i].length - 1) * level.tilewidth, 8);
+                for (var j=0; j < clusters[i].length; j++) {
+                    context.fillText("+" + textnum, coord.tilex + 5 + (level.tilewidth*j), coord.tiley + 5 + level.tileheight/2);
+                }
+                
             } else {
-                // Draw a vertical line
-                context.fillStyle = "#0000ff";
-                context.fillRect(coord.tilex + level.tilewidth/2 - 4, coord.tiley + level.tileheight/2, 8, (clusters[i].length - 1) * level.tileheight);
+                for (var j=0; j < clusters[i].length; j++) {
+                    context.fillText("+" + textnum, coord.tilex + 5, coord.tiley + 5 + level.tileheight/2 + (level.tileheight*j));
+                }
             }
         }
     }
